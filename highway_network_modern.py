@@ -6,8 +6,7 @@ from tensorflow.python.framework import ops
 
 
 
-def highway(input_, output_size, num_layers = 2, bias = -2.0, activation = tf.nn.relu, scope = None,
-  use_batch_timesteps = False, use_l2_loss = True, timestep = -1):
+def highway(input_, output_size, num_layers = 2, bias = -2.0, activation = tf.nn.relu, scope = None, use_batch_timesteps = False, use_l2_loss = True, timestep = -1, use_kronecker_reparameterization=False):
   """Highway Network (cf. http://arxiv.org/abs/1505.00387).
   
   t = sigmoid(Wy + b)

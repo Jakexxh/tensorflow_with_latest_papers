@@ -4,6 +4,7 @@
 
 Currently Implemented Papers:
 
+* Kronecker Highway RNN
 * Delta RNN
 * Highway Networks
 * Recurrent Highway Networks
@@ -37,6 +38,23 @@ If you would like to test these new features, you can:
 Simply modify the `rnn_cell` variable under the `PTBModel`
 
 Please run with TensorFlow 0.10 or higher
+
+### Kronecker RNN
+
+https://arxiv.org/pdf/1705.10142.pdf
+
+Uses Kronecker Products to reparameterize weight matrices. Implemented 2x2 kronecker product.
+
+Warning: there is no l2 soft unitary constraint implemented. This is on my to do. 
+
+```python
+import rnn_cell_modern
+
+rnn_cell = rnn_cell_modern.HighwayRNN(inputs, num_units = 1024, use_kronecker_reparameterization=True)
+
+# To Call
+output, new_state = rnn_cell(inputs, state)
+```
 
 
 ### Delta RNN

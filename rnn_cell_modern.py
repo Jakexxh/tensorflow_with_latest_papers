@@ -8,23 +8,27 @@ import tensorflow as tf
 
 # from multiplicative_integration import multiplicative_integration, multiplicative_integration_for_multiple_inputs
 
-from tensorflow.python.ops.nn import rnn_cell
 import highway_network_modern
 from multiplicative_integration_modern import multiplicative_integration
 from normalization_ops_modern import layer_norm
 
 from linear_modern import linear
 
-RNNCell = rnn_cell.RNNCell
+from tensorflow.contrib.rnn.python.ops.core_rnn_cell_impl import RNNCell
 
 
 class HighwayRNNCell(RNNCell):
   """Highway RNN Network with multiplicative_integration"""
 
-  def __init__(self, num_units, num_highway_layers = 3, use_inputs_on_each_layer = False):
+  def __init__(self, num_units, num_highway_layers = 3, use_inputs_on_each_layer = False,
+    use_kronecker_reparameterization=False):
     self._num_units = num_units
     self.num_highway_layers = num_highway_layers
     self.use_inputs_on_each_layer = use_inputs_on_each_layer
+    self._use_kronecker_reparameterization=use_kronecker_reparameterization
+
+    if self._use_kronecker_reparameterization:
+      tf.logging.warn("Using Kronecker Reparmeterization on Highway RNN Cell")
 
 
   @property
@@ -44,14 +48,18 @@ class HighwayRNNCell(RNNCell):
     for highway_layer in xrange(self.num_highway_layers):
       with tf.variable_scope('highway_factor_'+str(highway_layer)):
         if self.use_inputs_on_each_layer or highway_layer == 0:
-          highway_factor = tf.tanh(linear([inputs, current_state], self._num_units, True))
+          highway_factor = tf.tanh(linear([inputs, current_state], self._num_units, True,
+            use_kronecker_reparameterization=self._use_kronecker_reparameterization))
         else:
-          highway_factor = tf.tanh(linear([current_state], self._num_units, True))
+          highway_factor = tf.tanh(linear([current_state], self._num_units, True,
+            use_kronecker_reparameterization=self._use_kronecker_reparameterization))
       with tf.variable_scope('gate_for_highway_factor_'+str(highway_layer)):
         if self.use_inputs_on_each_layer or highway_layer == 0:
-          gate_for_highway_factor = tf.sigmoid(linear([inputs, current_state], self._num_units, True, -3.0))
+          gate_for_highway_factor = tf.sigmoid(linear([inputs, current_state], self._num_units,
+           True, -3.0, use_kronecker_reparameterization=self._use_kronecker_reparameterization))
         else:
-          gate_for_highway_factor = tf.sigmoid(linear([current_state], self._num_units, True, -3.0))
+          gate_for_highway_factor = tf.sigmoid(linear([current_state], self._num_units, True,
+           -3.0, use_kronecker_reparameterization=self._use_kronecker_reparameterization))
 
         gate_for_hidden_factor = 1.0 - gate_for_highway_factor
 

@@ -6,13 +6,12 @@ import math, numpy as np
 from six.moves import xrange 
 import tensorflow as tf
 from multiplicative_integration_modern import multiplicative_integration
-from tensorflow.python.ops.nn import rnn_cell
 import highway_network_modern
 from linear_modern import linear
 import normalization_ops_modern as nom
 from normalization_ops_modern import layer_norm
 
-RNNCell = rnn_cell.RNNCell
+from tensorflow.contrib.rnn.python.ops.core_rnn_cell_impl import RNNCell
 
 
 

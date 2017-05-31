@@ -61,7 +61,7 @@ import time, os, sys
 import numpy as np
 import tensorflow as tf
 
-from tensorflow.models.rnn.ptb import reader
+import reader
 import rnn_cell_modern, rnn_cell_mulint_modern, rnn_cell_mulint_layernorm_modern
 import rnn_cell_layernorm_modern
 
@@ -102,12 +102,13 @@ class PTBModel(object):
     # rnn_cell = rnn_cell_layernorm_modern.GRUCell_LayerNorm(size)
     # rnn_cell = rnn_cell_layernorm_modern.HighwayRNNCell_LayerNorm(size)
     # rnn_cell = rnn_cell_modern.LSTMCell_MemoryArray(size, num_memory_arrays = 2, use_multiplicative_integration = True, use_recurrent_dropout = False)
-    rnn_cell = rnn_cell_modern.MGUCell(size, use_multiplicative_integration = True, use_recurrent_dropout = False)
+    # rnn_cell = rnn_cell_modern.MGUCell(size, use_multiplicative_integration = True, use_recurrent_dropout = False)
+    rnn_cell = rnn_cell_modern.HighwayRNNCell(size, use_kronecker_reparameterization=True)
 
     if is_training and config.keep_prob < 1:
       rnn_cell = tf.nn.rnn_cell.DropoutWrapper(
           rnn_cell, output_keep_prob=config.keep_prob)
-    cell = tf.nn.rnn_cell.MultiRNNCell([rnn_cell] * config.num_layers, state_is_tuple=True)
+    cell = tf.contrib.rnn.MultiRNNCell([rnn_cell] * config.num_layers, state_is_tuple=True)
 
     self._initial_state = cell.zero_state(batch_size, tf.float32)
 

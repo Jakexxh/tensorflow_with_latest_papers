@@ -23,7 +23,8 @@ import tensorflow as tf
 
 
 use_weight_normalization_default = False
-def linear(args, output_size, bias, bias_start=0.0, use_l2_loss = False, use_weight_normalization = use_weight_normalization_default, scope=None, timestep = -1, weight_initializer = None, orthogonal_scale_factor = 1.1): 
+def linear(args, output_size, bias, bias_start=0.0, use_l2_loss = False, use_weight_normalization = use_weight_normalization_default, scope=None, timestep = -1, weight_initializer = None, orthogonal_scale_factor = 1.1,
+  use_kronecker_reparameterization=False): 
   """Linear map: sum_i(args[i] * W[i]), where W[i] is a variable.
 
   Args:
@@ -32,6 +33,7 @@ def linear(args, output_size, bias, bias_start=0.0, use_l2_loss = False, use_wei
     bias: boolean, whether to add a bias term or not.
     bias_start: starting value to initialize the bias; 0 by default.
     scope: VariableScope for the created subgraph; defaults to "Linear".
+    use_kronecker_reparameterization: reparameterizes weight matrix with 2x2 krocker product
 
   Returns:
     A 2D Tensor with shape [batch x output_size] equal to
@@ -43,6 +45,10 @@ def linear(args, output_size, bias, bias_start=0.0, use_l2_loss = False, use_wei
   # assert args #was causing error in upgraded tensorflow
   if not isinstance(args, (list, tuple)):
     args = [args]
+
+
+  if use_kronecker_reparameterization:
+    use_weight_normalization = False #we don't want to use weight norm with kronecker matrices
 
   if len(args) > 1 and use_weight_normalization: raise ValueError('you can not use weight_normalization with multiple inputs because the euclidean norm will be incorrect -- besides, you should be using multiple integration instead!!!')
 
@@ -64,9 +70,24 @@ def linear(args, output_size, bias, bias_start=0.0, use_l2_loss = False, use_wei
 
   # Now the computation.
   with tf.variable_scope(scope or "Linear"):
-    matrix = tf.get_variable("Matrix", [total_arg_size, output_size], 
+    if use_kronecker_reparameterization:
+      if len(shapes) > 1:
+        kro_matrix_list = []
+        for i,shape in enumerate(shapes):
+          kro_matrix_list.append(
+            _kronecker_product(shape[1], output_size, name="Matrix.{}".format(i)))
+        matrix = tf.concat(kro_matrix_list, axis=0)
+
+      else:
+        matrix = _kronecker_product(total_arg_size, output_size, name="Matrix")
+    else:
+      matrix = tf.get_variable("Matrix", [total_arg_size, output_size], 
                       initializer = tf.uniform_unit_scaling_initializer(), regularizer = l_regularizer)
     if use_weight_normalization: matrix = weight_normalization(matrix, timestep = timestep)
+
+
+
+
 
     if len(args) == 1:
       res = tf.matmul(args[0], matrix)
@@ -130,3 +151,12 @@ def batch_timesteps_linear(input, output_size, bias, bias_start=0.0, use_l2_loss
     res = tf.transpose(res, [1,0,2])
 
   return res
+
+
+def _kronecker_product(input_size, output_size, name="Kronecker"):
+  """Creates two kronecker matrices and calcs kronecker product
+  """
+  input_tensor = tf.get_variable("{}.input_tensor".format(name), shape=[input_size, 1])
+  output_tensor = tf.get_variable("{}.output_tensor".format(name), shape=[1, output_size])
+
+  return input_tensor * output_tensor #broadcast multiply
