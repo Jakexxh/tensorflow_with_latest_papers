@@ -11,7 +11,7 @@ from linear_modern import linear
 import normalization_ops_modern as nom
 from normalization_ops_modern import layer_norm
 
-from tensorflow.contrib.rnn.python.ops.core_rnn_cell_impl import RNNCell
+from tensorflow.python.ops.rnn_cell import RNNCell
 
 
 

@@ -11,7 +11,7 @@ import linear_modern as linear
 import highway_network_modern
 
 
-from tensorflow.contrib.rnn.python.ops.core_rnn_cell_impl import RNNCell
+from tensorflow.python.ops.rnn_cell import RNNCell
 
 
 '''the classes here contain integrative multiplication versions of the RNN which converge faster and lead to better scores

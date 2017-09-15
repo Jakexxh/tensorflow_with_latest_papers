@@ -8,7 +8,7 @@ import tensorflow as tf
 from multiplicative_integration_modern import multiplicative_integration
 import highway_network_modern
 from linear_modern import linear
-from tensorflow.contrib.rnn.python.ops.core_rnn_cell_impl import RNNCell
+from tensorflow.python.ops.rnn_cell import RNNCell
 
 
 
